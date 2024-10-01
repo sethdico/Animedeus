@@ -176,6 +176,10 @@
         .episode-nav span {
             margin: 0 10px;
         }
+
+        .fallback-on {
+            background-color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -188,7 +192,7 @@
 
         <div class="controls">
             <button id="prevEpisode">Previous</button>
-            <button id="fallbackButton">Fallback</button>
+            <button id="fallbackButton">Fallback: Off</button>
             <button id="nextEpisode">Next</button>
         </div>
 
@@ -270,7 +274,7 @@
                 const data = await response.json();
                 animeDetails = data.data;
                 totalEpisodes = animeDetails.episodes || 9999;  // Use 9999 if episodes are unknown
-                currentEpisodeRange = 1;
+                currentEpisodeRange = Math.ceil(currentEpisode / 100);
                 generateEpisodeNav();
                 generateEpisodeButtons();
                 updatePlayer();
@@ -383,12 +387,17 @@
             }
         };
 
+        const toggleFallback = () => {
+            isFallbackMode = !isFallbackMode;
+            const fallbackButton = document.getElementById('fallbackButton');
+            fallbackButton.textContent = `Fallback: ${isFallbackMode ? 'On' : 'Off'}`;
+            fallbackButton.classList.toggle('fallback-on', isFallbackMode);
+            updatePlayer();
+        };
+
         document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
         document.getElementById('nextEpisode').addEventListener('click', () => changeEpisode(1));
-        document.getElementById('fallbackButton').addEventListener('click', () => {
-            isFallbackMode = !isFallbackMode;
-            updatePlayer();
-        });
+        document.getElementById('fallbackButton').addEventListener('click', toggleFallback);
 
         const showError = (message) => {
             document.getElementById('error').textContent = message;

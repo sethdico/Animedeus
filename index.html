@@ -91,7 +91,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 50%;
         }
 
         .current-episode {
@@ -158,28 +157,14 @@
             text-decoration: underline;
         }
 
-        .fallback-link {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .fallback-link a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        .fallback-link a:hover {
-            text-decoration: underline;
-        }
-
-        .season-nav {
+        .episode-nav {
             display: flex;
             justify-content: center;
             align-items: center;
             margin-bottom: 10px;
         }
 
-        .season-nav button {
+        .episode-nav button {
             background-color: transparent;
             border: none;
             color: var(--text-color);
@@ -188,7 +173,7 @@
             padding: 0 10px;
         }
 
-        .season-nav span {
+        .episode-nav span {
             margin: 0 10px;
         }
     </style>
@@ -196,8 +181,6 @@
 <body>
     <div class="container">
         <h1>Animedeus</h1>
-
-        <div id="fallbackLink" class="fallback-link"></div>
 
         <div class="video-container">
             <iframe id="videoPlayer" allowfullscreen></iframe>
@@ -209,7 +192,7 @@
             <button id="nextEpisode">Next</button>
         </div>
 
-        <div id="seasonNav" class="season-nav"></div>
+        <div id="episodeNav" class="episode-nav"></div>
         <div id="episodeButtons" class="episode-buttons"></div>
 
         <input type="text" id="searchInput" placeholder="Search anime">
@@ -238,7 +221,8 @@
         let currentEpisode = 1;
         let totalEpisodes = 0;
         let animeDetails = null;
-        let currentSeason = 1;
+        let currentEpisodeRange = 1;
+        let isFallbackMode = false;
 
         const searchMAL = async () => {
             const searchTerm = document.getElementById('searchInput').value;
@@ -285,9 +269,9 @@
                 if (!response.ok) throw new Error('Failed to load anime details');
                 const data = await response.json();
                 animeDetails = data.data;
-                totalEpisodes = animeDetails.episodes;
-                currentSeason = 1;
-                generateSeasonNav();
+                totalEpisodes = animeDetails.episodes || 9999;  // Use 9999 if episodes are unknown
+                currentEpisodeRange = 1;
+                generateEpisodeNav();
                 generateEpisodeButtons();
                 updatePlayer();
                 displayAnimeDetails();
@@ -298,34 +282,35 @@
             }
         };
 
-        const generateSeasonNav = () => {
-            const seasonNav = document.getElementById('seasonNav');
-            seasonNav.innerHTML = '';
+        const generateEpisodeNav = () => {
+            const episodeNav = document.getElementById('episodeNav');
+            episodeNav.innerHTML = '';
 
             if (totalEpisodes > 100) {
                 const prevButton = document.createElement('button');
                 prevButton.innerHTML = '&laquo;';
-                prevButton.onclick = () => changeSeason(-1);
-                seasonNav.appendChild(prevButton);
+                prevButton.onclick = () => changeEpisodeRange(-1);
+                episodeNav.appendChild(prevButton);
 
-                const seasonSpan = document.createElement('span');
-                seasonSpan.id = 'currentSeason';
-                seasonSpan.textContent = `Season ${currentSeason}`;
-                seasonNav.appendChild(seasonSpan);
+                const rangeSpan = document.createElement('span');
+                rangeSpan.id = 'currentRange';
+                rangeSpan.textContent = `${(currentEpisodeRange - 1) * 100 + 1}-${Math.min(currentEpisodeRange * 100, totalEpisodes)}`;
+                episodeNav.appendChild(rangeSpan);
 
                 const nextButton = document.createElement('button');
                 nextButton.innerHTML = '&raquo;';
-                nextButton.onclick = () => changeSeason(1);
-                seasonNav.appendChild(nextButton);
+                nextButton.onclick = () => changeEpisodeRange(1);
+                episodeNav.appendChild(nextButton);
             }
         };
 
-        const changeSeason = (delta) => {
-            const newSeason = currentSeason + delta;
-            if (newSeason >= 1 && newSeason <= Math.ceil(totalEpisodes / 100)) {
-                currentSeason = newSeason;
+        const changeEpisodeRange = (delta) => {
+            const newRange = currentEpisodeRange + delta;
+            if (newRange >= 1 && (newRange - 1) * 100 < totalEpisodes) {
+                currentEpisodeRange = newRange;
                 generateEpisodeButtons();
-                document.getElementById('currentSeason').textContent = `Season ${currentSeason}`;
+                document.getElementById('currentRange').textContent = 
+                    `${(currentEpisodeRange - 1) * 100 + 1}-${Math.min(currentEpisodeRange * 100, totalEpisodes)}`;
             }
         };
 
@@ -333,8 +318,8 @@
             const episodeButtonsContainer = document.getElementById('episodeButtons');
             episodeButtonsContainer.innerHTML = '';
 
-            const start = (currentSeason - 1) * 100 + 1;
-            const end = Math.min(currentSeason * 100, totalEpisodes);
+            const start = (currentEpisodeRange - 1) * 100 + 1;
+            const end = Math.min(currentEpisodeRange * 100, totalEpisodes);
 
             for (let i = start; i <= end; i++) {
                 const button = document.createElement('button');
@@ -352,11 +337,9 @@
         const updatePlayer = () => {
             const dubSub = document.getElementById('dubSub').value;
             const videoPlayer = document.getElementById('videoPlayer');
-            const fallbackLink = document.getElementById('fallbackLink');
-            const url = `https://vidlink.pro/anime/${animeDetails.mal_id}/${currentEpisode}/${dubSub}`;
+            const url = `https://vidlink.pro/anime/${animeDetails.mal_id}/${currentEpisode}/${dubSub}${isFallbackMode ? '?fallback=true' : ''}`;
             
             videoPlayer.src = url;
-            fallbackLink.innerHTML = `<a href="${url}?fallback=true" target="_blank">Fallback Link</a>`;
 
             document.getElementById('episode').value = currentEpisode;
 
@@ -391,10 +374,10 @@
             const newEpisode = currentEpisode + delta;
             if (newEpisode >= 1 && newEpisode <= totalEpisodes) {
                 currentEpisode = newEpisode;
-                if (currentEpisode > currentSeason * 100) {
-                    changeSeason(1);
-                } else if (currentEpisode <= (currentSeason - 1) * 100) {
-                    changeSeason(-1);
+                if (currentEpisode > currentEpisodeRange * 100) {
+                    changeEpisodeRange(1);
+                } else if (currentEpisode <= (currentEpisodeRange - 1) * 100) {
+                    changeEpisodeRange(-1);
                 }
                 updatePlayer();
             }
@@ -403,9 +386,8 @@
         document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
         document.getElementById('nextEpisode').addEventListener('click', () => changeEpisode(1));
         document.getElementById('fallbackButton').addEventListener('click', () => {
-            const dubSub = document.getElementById('dubSub').value;
-            const url = `https://vidlink.pro/anime/${animeDetails.mal_id}/${currentEpisode}/${dubSub}?fallback=true`;
-            window.open(url, '_blank');
+            isFallbackMode = !isFallbackMode;
+            updatePlayer();
         });
 
         const showError = (message) => {

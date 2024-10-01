@@ -125,7 +125,7 @@
             transform: translateY(-2px); 
         }
 
-        #searchResults {
+        #search Results {
             background-color: var(--secondary-color);
             border-radius: 10px;
             margin-top: 10px;
@@ -285,7 +285,7 @@
 
         const loadAnime = async () => {
             showLoading();
-            const malId = document.getElementById('malId').value;
+            const malId = document.getElementById('malId'). value;
             currentEpisode = parseInt(document.getElementById('episode').value ) || 1;
 
             try {
@@ -333,9 +333,17 @@
 
         const updatePlayer = async () => {
             const dubSub = document.getElementById('dubSub').value;
-            const url = `https://vidlink.pro/tv/${currentAnimeId}/${currentEpisode}/${dubSub}?primaryColor=ff0044&secondaryColor=f788a6&iconColor=ff0044&title=false&poster=true&autoplay=false&nextbutton=true`;
+            const baseUrl = `https://vidlink.pro/tv/${currentAnimeId}/${currentEpisode}/${dubSub}`;
+            const customParams = `primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=false&poster=true&autoplay=false&nextbutton=true&icons=vid`;
+            const url = `${baseUrl}?${customParams}`;
             const videoPlayer = document.getElementById('videoPlayer');
             videoPlayer.src = url;
+
+            const urlDisplay = document.createElement('p');
+            urlDisplay.textContent = `Current URL: ${url}`;
+            urlDisplay.style.textAlign = 'center';
+            urlDisplay.style.marginBottom = '10px';
+            videoPlayer.parentNode.insertBefore(urlDisplay, videoPlayer);
 
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = `
@@ -371,9 +379,18 @@
 
         const fallback = () => {
             const dubSub = document.getElementById('dubSub').value;
-            const url = `https://vidlink.pro/anime/${currentAnimeId}/${currentEpisode}/${dubSub}`;
+            const baseUrl = `https://vidlink.pro/anime/${currentAnimeId}/${currentEpisode}/${dubSub}`;
+            const customParams = `primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=false&poster=true&autoplay=false&nextbutton=true&icons=vid`;
+            const url = `${baseUrl}?${customParams}&fallback=true`;
             const videoPlayer = document.getElementById('videoPlayer');
             videoPlayer.src = url;
+
+            const urlDisplay = document.createElement('p');
+            urlDisplay.textContent = `Fallback URL: ${url}`;
+            urlDisplay.style.textAlign = 'center';
+            urlDisplay.style.marginBottom = '10px';
+            urlDisplay.style.color = '#B20710'; // Red color to indicate fallback mode
+            videoPlayer.parentNode.insertBefore(urlDisplay, videoPlayer);
         };
 
         document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
@@ -431,6 +448,6 @@
             });
         };
     </script>
-    <p style="text-align: center; margin-top: 20px;">Made with ❤️ by <a href="https://github.com/sethdico" target="_blank">sethdico</a></p>
+    <p style="text-align: center; margin-top: 20px;">Made by <a href="https://github.com/sethdico" target="_blank">sethdico</a></p>
 </body>
 </html>

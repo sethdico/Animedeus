@@ -44,6 +44,9 @@
             width: 100%;
             padding-top: 56.25%;
             margin-bottom: 20px;
+            background-color: var(--primary-color);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .video-container iframe {
@@ -52,8 +55,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            border: 2px solid var(--primary-color);
-            border-radius: 8px;
+            border: none;
         }
 
         .controls {
@@ -216,6 +218,7 @@
             <option value="sub">Sub</option>
             <option value="dub">Dub</option>
         </select>
+        <input type="text" id="subtitleLanguage" placeholder="Subtitle Language (e.g., en, es, fr)">
         <button onclick="loadAnime()">Load Anime</button>
 
         <div id="animeDetails" class="anime-details"></div>
@@ -350,10 +353,28 @@
 
         const updatePlayer = () => {
             const dubSub = document.getElementById('dubSub').value;
+            const subtitleLanguage = document.getElementById('subtitleLanguage').value;
             const videoPlayer = document.getElementById('videoPlayer');
-            const url = `https://vidlink.pro/anime/${animeDetails.mal_id}/${currentEpisode}/${dubSub}${isFallbackMode ? '?fallback=true' : ''}`;
+            let url = `https://vidlink.pro/anime/${animeDetails.mal_id}/${currentEpisode}/${dubSub}`;
             
+            if (isFallbackMode) {
+                url += '?fallback=true';
+            }
+
+            // Add subtitle parameters
+            if (subtitleLanguage) {
+                url += (url.includes('?') ? '&' : '?') + `caption=${subtitleLanguage}`;
+            }
+
+            // Add customization parameters
+            url += (url.includes('?') ? '&' : '?') + 'primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=false&poster=true&autoplay=false&nextbutton=true';
+
             videoPlayer.src = url;
+
+            // Prevent unmuting when video is loaded
+            videoPlayer.onload = () => {
+                videoPlayer.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', '*');
+            };
 
             document.getElementById('episode').value = currentEpisode;
 

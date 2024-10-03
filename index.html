@@ -14,6 +14,15 @@
             --button-hover-color: #B20710;
         }
 
+        .light-theme {
+            --primary-color: #B20710;
+            --secondary-color: #F0F0F0;
+            --background-color: #FFFFFF;
+            --text-color: #333333;
+            --button-color: #E0E0E0;
+            --button-hover-color: #B20710;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -25,6 +34,7 @@
             background-color: var(--background-color);
             color: var(--text-color);
             line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
@@ -33,8 +43,15 @@
             padding: 20px;
         }
 
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: var(--secondary-color);
+        }
+
         h1, h2 {
-            text-align: center;
             color: var(--primary-color);
             margin: 20px 0;
         }
@@ -180,46 +197,56 @@
         .fallback-on {
             background-color: var(--primary-color);
         }
+
+        #themeToggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <header>
         <h1>Animedeus</h1>
+    </header>
+    <main>
+        <div class="container">
+            <div class="video-container">
+                <iframe id="videoPlayer" allowfullscreen muted></iframe>
+            </div>
 
-        <div class="video-container">
-            <iframe id="videoPlayer" allowfullscreen></iframe>
+            <div class="controls">
+                <button id="prevEpisode">Previous</button>
+                <button id="fallbackButton">Fallback: Off</button>
+                <button id="nextEpisode">Next</button>
+            </div>
+
+            <div id="episodeNav" class="episode-nav"></div>
+            <div id="episodeButtons" class="episode-buttons"></div>
+
+            <input type="text" id="searchInput" placeholder="Search anime">
+            <button onclick="searchMAL()">Search</button>
+            <div id="searchResults" class="search-results"></div>
+
+            <input type="text" id="malId" placeholder="MAL ID">
+            <input type="number" id="episode" placeholder="Episode">
+            <select id="dubSub">
+                <option value="sub">Sub</option>
+                <option value="dub">Dub</option>
+            </select>
+            <button onclick="loadAnime()">Load Anime</button>
+
+            <div id="animeDetails" class="anime-details"></div>
+
+            <div id="error" class="error"></div>
+            <div id="loading" class="loading"></div>
+
+            <div class="alternative-link">
+                <a href="https://www.miruro.tv" target="_blank">If error, you can use this website: www.miruro.tv</a>
+            </div>
         </div>
-
-        <div class="controls">
-            <button id="prevEpisode">Previous</button>
-            <button id="fallbackButton">Fallback: Off</button>
-            <button id="nextEpisode">Next</button>
-        </div>
-
-        <div id="episodeNav" class="episode-nav"></div>
-        <div id="episodeButtons" class="episode-buttons"></div>
-
-        <input type="text" id="searchInput" placeholder="Search anime">
-        <button onclick="searchMAL()">Search</button>
-        <div id="searchResults" class="search-results"></div>
-
-        <input type="text" id="malId" placeholder="MAL ID">
-        <input type="number" id="episode" placeholder="Episode">
-        <select id="dubSub">
-            <option value="sub">Sub</option>
-            <option value="dub">Dub</option>
-        </select>
-        <button onclick="loadAnime()">Load Anime</button>
-
-        <div id="animeDetails" class="anime-details"></div>
-
-        <div id="error" class="error"></div>
-        <div id="loading" class="loading"></div>
-
-        <div class="alternative-link">
-            <a href="https://www.miruro.tv" target="_blank">If error, you can use this website: www.miruro.tv</a>
-        </div>
-    </div>
+    </main>
 
     <script>
         let currentEpisode = 1;
@@ -396,7 +423,9 @@
         };
 
         document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
-        document.getElementById('nextEpisode').addEventListener('click', () => changeEpisode(1));
+        document.getElementById('nextEpisode').addEventListener('click', ()
+
+ => changeEpisode(1));
         document.getElementById('fallbackButton').addEventListener('click', toggleFallback);
 
         const showError = (message) => {
@@ -410,6 +439,7 @@
         const showLoading = (isLoading) => {
             document.getElementById('loading').textContent = isLoading ? 'Loading...' : '';
         };
+
     </script>
 </body>
 </html>

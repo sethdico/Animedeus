@@ -44,20 +44,6 @@
             width: 100%;
             padding-top: 56.25%;
             margin-bottom: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .video-container::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            background-color: var(--primary-color);
-            filter: blur(20px);
-            z-index: -1;
         }
 
         .video-container iframe {
@@ -66,7 +52,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            border: none;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
         }
 
         .controls {
@@ -170,13 +157,6 @@
             text-decoration: underline;
         }
 
-        .creator-info {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 0.9em;
-            color: var(--text-color);
-        }
-
         .episode-nav {
             display: flex;
             justify-content: center;
@@ -237,10 +217,7 @@
         <div id="loading" class="loading"></div>
 
         <div class="alternative-link">
-            <a href="https://kuroiru.co" target="_blank">If error, you can use this website: kuroiru.co</a>
-        </div>
-        <div class="creator-info">
-            made by <a href="https://github.com/sethdico" target="_blank">https://github.com/sethdico</a> aka amadeus
+            <a href="https://www.miruro.tv" target="_blank">If error, you can use this website: www.miruro.tv</a>
         </div>
     </div>
 
@@ -364,21 +341,9 @@
         const updatePlayer = () => {
             const dubSub = document.getElementById('dubSub').value;
             const videoPlayer = document.getElementById('videoPlayer');
-            let url = `https://vidlink.pro/anime/${animeDetails.mal_id}/${currentEpisode}/${dubSub}`;
+            const url = `https://vidlink.pro/anime/${animeDetails.mal_id}/${currentEpisode}/${dubSub}${isFallbackMode ? '?fallback=true' : ''}`;
             
-            if (isFallbackMode) {
-                url += '?fallback=true';
-            }
-
-            // Add customization parameters
-            url += (url.includes('?') ? '&' : '?') + 'primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=false&poster=true&autoplay=false&nextbutton=true';
-
             videoPlayer.src = url;
-
-            // Prevent unmuting when video is loaded
-            videoPlayer.onload = () => {
-                videoPlayer.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', '*');
-            };
 
             document.getElementById('episode').value = currentEpisode;
 
@@ -426,8 +391,7 @@
             isFallbackMode = !isFallbackMode;
             const fallbackButton = document.getElementById('fallbackButton');
             fallbackButton.textContent = `Fallback: ${isFallbackMode ? 'On' : 'Off'}`;
-            fallbackButton.classList.toggle('fall
-back-on', isFallbackMode);
+            fallbackButton.classList.toggle('fallback-on', isFallbackMode);
             updatePlayer();
         };
 

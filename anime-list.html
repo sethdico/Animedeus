@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animedeus - play</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="anime-list.html" class="active">play</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+
+        <h1>Anime List</h1>
+
+        <div class="search-container">
+            <input type="text" id="animeListSearch" placeholder="Search anime in list">
+            <button onclick="searchAnimeList()">Search</button>
+        </div>
+        <div id="animeListResults" class="search-results"></div>
+
+        <div class="video-container">
+            <iframe id="videoPlayer" allowfullscreen></iframe>
+        </div>
+
+        <div class="controls">
+            <button id="prevEpisode">Previous</button>
+            <button id="fallbackButton">Fallback: Off</button>
+            <button id="nextEpisode">Next</button>
+        </div>
+
+        <div id="episodeNav" class="episode-nav"></div>
+        <div id="episodeButtons" class="episode-buttons"></div>
+
+        <input type="text" id="malId" placeholder="MAL ID">
+        <input type="number" id="episode" placeholder="Episode">
+        <select id="dubSub">
+            <option value="sub">Sub</option>
+            <option value="dub">Dub</option>
+        </select>
+        <button onclick="loadAnime()">Load Anime</button>
+
+        <div id="animeDetails" class="anime-details"></div>
+
+        <div id="error" class="error"></div>
+        <div id="loading" class="loading"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

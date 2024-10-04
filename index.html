@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animedeus - Home</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="anime-list.html">play</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+
+        <h1>Animedeus</h1>
+        <p>5k titles</p>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search anime">
+            <button onclick="searchMAL()">Search</button>
+        </div>
+        <div id="searchResults" class="search-results"></div>
+        
+        <div id="animeInfo" class="anime-info"></div>
+
+        <div id="error" class="error"></div>
+        <div id="loading" class="loading"></div>
+
+        <div class="alternative-link">
+            <a href="https://kuroiru.co" target="_blank">If error, you can use this website: kuroiru.co</a>
+        </div>
+        <div class="creator-info">
+            made by <a href="https://github.com/sethdico" target="_blank">https://github.com/sethdico</a> aka amadeus
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

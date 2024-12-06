@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animedeus</title>
+    <style>
+        :root {
+            --primary-color: #B20710;
+            --secondary-color: #1E1E1E;
+            --background-color: #121212;
+            --text-color: #E0E0E0;
+            --button-color: #2A2A2A;
+            --button-hover-color: #B20710;
+            --dark-background-color: #121212;
+            --dark-text-color: #E0E0E0;
+            --light-background-color: #FFFFFF;
+            --light-text-color: #000000;
+        }
+        body.dark-mode {
+            --background-color: var(--dark-background-color);
+            --text-color: var(--dark-text-color);
+        }
+        body.light-mode {
+            --background-color: var(--light-background-color);
+            --text-color: var(--light-text-color);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin: 20px 0;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            margin-bottom: 20px;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .episode-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: var(--button-color);
+            color: var(--text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--button-hover-color);
+        }
+
+        .episode-button {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .current-episode {
+            background-color: var(--primary-color);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border: 1px solid var(--button-color);
+            border-radius: 5px;
+        }
+
+        .search-results {
+            background-color: var(--secondary-color);
+            border-radius: 5px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .search-result {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .search-result:hover {
+            background-color: var(--button-hover-color);
+        }
+
+        .anime-details {
+            background-color: var(--secondary-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .error {
+            color: var(--primary-color);
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .alternative-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .alternative-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .alternative-link a:hover {
+            text-decoration: underline;
+        }
+
+        .creator-info {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+
+        .episode-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .episode-nav button {
+            background-color: transparent;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        .episode-nav span {
+            margin: 0 10px;
+        }
+
+        .fallback-on {
+            background-color: var(--primary-color);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--button-color);
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--button-hover-color);
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="container">
+        <h1>Animedeus</h1>
+        <div id="left"> </div>
+
+        <div class="video-container">
+            <iframe id="videoPlayer" allowfullscreen></iframe>
+        </div>
+
+        <div class="controls">
+            <button id="prevEpisode">Previous</button>
+            <button id="fallbackButton">Fallback: Off</button>
+            <button id="nextEpisode">Next</button>
+        </div>
+
+        <div id="episodeNav" class="episode-nav"></div>
+        <div id="episodeButtons" class="episode-buttons"></div>
+
+        <input type="text" id="searchInput" placeholder="Search anime" autofocus>
+        <button onclick="searchAnime()">Search</button>
+        <div id="searchResults" class="search-results"></div>
+
+        <div id="animeDetails" class="anime-details"></div>
+
+        <div id="error" class="error"></div>
+        <div id="loading" class="loading"></div>
+
+        <div class="alternative-link">
+            <a href="https://kuroiru.co" target="_blank">If error, you can use this website: kuroiru.co</a>
+        </div>
+        <div class="creator-info">
+            made by <a href="https://github.com/sethdico" target="_blank">sethdico</a> aka amadeus
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+
+    <script>
+        let currentEpisode = 1;
+        let totalEpisodes = 0;
+        let animeDetails = null;
+        let currentEpisodeRange = 1;
+        let isFallbackMode = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('searchInput').focus();
+        });
+
+        const searchAnime = async () => {
+            const searchTerm = document.getElementById('searchInput').value;
+            showLoading(true);
+            clearError();
+
+            try {
+                const searchUrl = `https://animesuge.to/search?keyword=${encodeURIComponent(searchTerm)}`;
+                document.getElementById('videoPlayer').src = searchUrl;
+                showLoading(false);
+            } catch (err) {
+                showError('An error occurred while searching. Please try again.');
+                showLoading(false);
+            }
+        };
+
+        const updatePlayer = (animeUrl) => {
+            document.getElementById('videoPlayer').src = animeUrl;
+        };
+
+        const changeEpisode = (delta) => {
+            // This function would need to be implemented based on the structure of animesuge.to
+            // For now, we'll just show a message
+            showError('Episode navigation is not implemented for this viewer.');
+        };
+
+        const toggleFallback = () => {
+            isFallbackMode = !isFallbackMode;
+            const fallbackButton = document.getElementById('fallbackButton');
+            fallbackButton.textContent = `Fallback: ${isFallbackMode ? 'On' : 'Off'}`;
+            fallbackButton.classList.toggle('fallback-on', isFallbackMode);
+            // Implement fallback logic here if needed
+        };
+
+        const toggleTheme = () => {
+            document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('light-mode');
+        };
+
+        document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
+        document.getElementById('nextEpisode').addEventListener('click', () => changeEpisode(1));
+        document.getElementById('fallbackButton').addEventListener('click', toggleFallback);
+
+        const showError = (message) => {
+            document.getElementById('error').textContent = message;
+        };
+
+        const clearError = () => {
+            document.getElementById('error').textContent = '';
+        };
+
+        const showLoading = (isLoading) => {
+            document.getElementById('loading').textContent = isLoading ? 'Loading...' : '';
+        };
+    </script>
+</body>
+</html>

@@ -219,8 +219,7 @@
 <body class="dark-mode">
     <div class="container">
         <h1>Animedeus</h1>
-        <div id="left"> </div>
-
+        
         <div class="video-container">
             <iframe id="videoPlayer" allowfullscreen></iframe>
         </div>
@@ -255,8 +254,7 @@
     <script>
         let currentEpisode = 1;
         let totalEpisodes = 0;
-        let animeDetails = null;
-        let currentEpisodeRange = 1;
+        let currentAnimeSlug = '';
         let isFallbackMode = false;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -264,28 +262,109 @@
         });
 
         const searchAnime = async () => {
-            const searchTerm = document.getElementById('searchInput').value;
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) return;
+
             showLoading(true);
             clearError();
 
             try {
-                const searchUrl = `https://animesuge.to/search?keyword=${encodeURIComponent(searchTerm)}`;
-                document.getElementById('videoPlayer').src = searchUrl;
-                showLoading(false);
+                const searchUrl = `https://animesugetv.to/filter?keyword=${encodeURIComponent(searchTerm)}`;
+                const response = await fetch(searchUrl);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const results = doc.querySelectorAll('.film-poster');
+                
+                displaySearchResults(Array.from(results).map(result => ({
+                    title: result.querySelector('img').alt,
+                    slug: result.querySelector('a').href.split('/').pop(),
+                    image: result.querySelector('img').src
+                })));
             } catch (err) {
                 showError('An error occurred while searching. Please try again.');
+            } finally {
                 showLoading(false);
             }
         };
 
-        const updatePlayer = (animeUrl) => {
-            document.getElementById('videoPlayer').src = animeUrl;
+        const displaySearchResults = (results) => {
+            const searchResults = document.getElementById('searchResults');
+            searchResults.innerHTML = '';
+
+            results.forEach(anime => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'search-result';
+                resultDiv.innerHTML = `
+                    <img src="${anime.image}" alt="${anime.title}" style="width: 50px; height: 70px; margin-right: 10px;">
+                    <span>${anime.title}</span>
+                `;
+                resultDiv.onclick = () => loadAnime(anime.slug);
+                searchResults.appendChild(resultDiv);
+            });
+        };
+
+        const loadAnime = async (slug) => {
+            currentAnimeSlug = slug;
+            currentEpisode = 1;
+            showLoading(true);
+            clearError();
+
+            try {
+                const animeUrl = `https://animesugetv.to/watch/${slug}`;
+                const response = await fetch(animeUrl);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                totalEpisodes = doc.querySelectorAll('.ep-item').length;
+                updateEpisodeButtons();
+                loadEpisode(currentEpisode);
+            } catch (err) {
+                showError('Failed to load anime. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        const loadEpisode = (episode) => {
+            if (!currentAnimeSlug) return;
+            
+            currentEpisode = episode;
+            const watchUrl = `https://animesugetv.to/watch/${currentAnimeSlug}/ep-${episode}`;
+            document.getElementById('videoPlayer').src = watchUrl;
+            updateEpisodeButtons();
+            updateAnimeDetails();
         };
 
         const changeEpisode = (delta) => {
-            // This function would need to be implemented based on the structure of animesuge.to
-            // For now, we'll just show a message
-            showError('Episode navigation is not implemented for this viewer.');
+            const newEpisode = currentEpisode + delta;
+            if (newEpisode >= 1 && newEpisode <= totalEpisodes) {
+                loadEpisode(newEpisode);
+            }
+        };
+
+        const updateEpisodeButtons = () => {
+            const container = document.getElementById('episodeButtons');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= totalEpisodes; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('episode-button');
+                if (i === currentEpisode) button.classList.add('current-episode');
+                button.onclick = () => loadEpisode(i);
+                container.appendChild(button);
+            }
+        };
+
+        const updateAnimeDetails = () => {
+            const details = document.getElementById('animeDetails');
+            details.innerHTML = `
+                <h2>Now Playing</h2>
+                <p><strong>Anime:</strong> ${currentAnimeSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                <p><strong>Episode:</strong> ${currentEpisode} / ${totalEpisodes}</p>
+            `;
         };
 
         const toggleFallback = () => {
@@ -293,17 +372,13 @@
             const fallbackButton = document.getElementById('fallbackButton');
             fallbackButton.textContent = `Fallback: ${isFallbackMode ? 'On' : 'Off'}`;
             fallbackButton.classList.toggle('fallback-on', isFallbackMode);
-            // Implement fallback logic here if needed
+            if (currentAnimeSlug) loadEpisode(currentEpisode);
         };
 
         const toggleTheme = () => {
             document.body.classList.toggle('dark-mode');
             document.body.classList.toggle('light-mode');
         };
-
-        document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
-        document.getElementById('nextEpisode').addEventListener('click', () => changeEpisode(1));
-        document.getElementById('fallbackButton').addEventListener('click', toggleFallback);
 
         const showError = (message) => {
             document.getElementById('error').textContent = message;
@@ -316,6 +391,13 @@
         const showLoading = (isLoading) => {
             document.getElementById('loading').textContent = isLoading ? 'Loading...' : '';
         };
+
+        document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
+        document.getElementById('nextEpisode').addEventListener('click', () => changeEpisode(1));
+        document.getElementById('fallbackButton').addEventListener('click', toggleFallback);
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchAnime();
+        });
     </script>
 </body>
 </html>

@@ -6,12 +6,12 @@
     <title>Animedeus</title>
     <style>
         :root {
-            --primary-color: #B20710;
-            --secondary-color: #1E1E1E;
+            --primary-color: #FF9800;
+            --secondary-color: #2C2C2C;
             --background-color: #121212;
             --text-color: #E0E0E0;
-            --button-color: #2A2A2A;
-            --button-hover-color: #B20710;
+            --button-color: #3D3D3D;
+            --button-hover-color: #FF9800;
             --dark-background-color: #121212;
             --dark-text-color: #E0E0E0;
             --light-background-color: #FFFFFF;
@@ -25,13 +25,11 @@
             --background-color: var(--light-background-color);
             --text-color: var(--light-text-color);
         }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-
         body {
             font-family: 'Roboto', Arial, sans-serif;
             background-color: var(--background-color);
@@ -39,26 +37,22 @@
             line-height: 1.6;
             transition: background-color 0.3s, color 0.3s;
         }
-
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-
         h1, h2 {
             text-align: center;
             color: var(--primary-color);
             margin: 20px 0;
         }
-
         .video-container {
             position: relative;
             width: 100%;
             padding-top: 56.25%;
             margin-bottom: 20px;
         }
-
         .video-container iframe {
             position: absolute;
             top: 0;
@@ -68,14 +62,12 @@
             border: 2px solid var(--primary-color);
             border-radius: 8px;
         }
-
         .controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
-
         .episode-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -83,7 +75,6 @@
             justify-content: center;
             margin-bottom: 20px;
         }
-
         button {
             background-color: var(--button-color);
             color: var(--text-color);
@@ -91,13 +82,14 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
         }
-
         button:hover {
             background-color: var(--button-hover-color);
         }
-
+        button:active {
+            transform: scale(0.98);
+        }
         .episode-button {
             width: 40px;
             height: 40px;
@@ -105,11 +97,9 @@
             justify-content: center;
             align-items: center;
         }
-
         .current-episode {
             background-color: var(--primary-color);
         }
-
         input, select {
             width: 100%;
             padding: 10px;
@@ -119,100 +109,85 @@
             border: 1px solid var(--button-color);
             border-radius: 5px;
         }
-
         .search-results {
             background-color: var(--secondary-color);
             border-radius: 5px;
             margin-top: 10px;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
         }
-
         .search-result {
+            display: flex;
+            align-items: center;
             padding: 10px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-
         .search-result:hover {
             background-color: var(--button-hover-color);
         }
-
+        .search-result img {
+            width: 50px;
+            height: 70px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
         .anime-details {
             background-color: var(--secondary-color);
             padding: 20px;
             border-radius: 8px;
             margin-top: 20px;
         }
-
         .error {
-            color: var(--primary-color);
+            color: #FF5252;
             text-align: center;
             margin-top: 20px;
         }
-
         .loading {
             text-align: center;
             margin-top: 20px;
         }
-
         .alternative-link {
             text-align: center;
             margin-top: 20px;
         }
-
         .alternative-link a {
             color: var(--primary-color);
             text-decoration: none;
         }
-
         .alternative-link a:hover {
             text-decoration: underline;
         }
-
         .creator-info {
             text-align: center;
             margin-top: 10px;
             font-size: 0.9em;
             color: var(--text-color);
         }
-
-        .episode-nav {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .episode-nav button {
-            background-color: transparent;
-            border: none;
-            color: var(--text-color);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0 10px;
-        }
-
-        .episode-nav span {
-            margin: 0 10px;
-        }
-
-        .fallback-on {
-            background-color: var(--primary-color);
-        }
-
         .theme-toggle {
-            position: absolute;
+            position: fixed;
             top: 10px;
             right: 10px;
             background-color: var(--button-color);
             padding: 10px;
             border-radius: 5px;
             cursor: pointer;
+            z-index: 1000;
         }
-
         .theme-toggle:hover {
             background-color: var(--button-hover-color);
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .video-container {
+                padding-top: 75%;
+            }
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -230,7 +205,6 @@
             <button id="nextEpisode">Next</button>
         </div>
 
-        <div id="episodeNav" class="episode-nav"></div>
         <div id="episodeButtons" class="episode-buttons"></div>
 
         <input type="text" id="searchInput" placeholder="Search anime" autofocus>
@@ -243,10 +217,10 @@
         <div id="loading" class="loading"></div>
 
         <div class="alternative-link">
-            <a href="https://kuroiru.co" target="_blank">If error, you can use this website: kuroiru.co</a>
+            <a href="https://kuroiru.co" target="_blank" rel="noopener noreferrer">If error, you can use this website: kuroiru.co</a>
         </div>
         <div class="creator-info">
-            made by <a href="https://github.com/sethdico" target="_blank">sethdico</a> aka amadeus
+            made by <a href="https://github.com/sethdico" target="_blank" rel="noopener noreferrer">sethdico</a> aka amadeus
         </div>
         <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
     </div>
@@ -269,17 +243,18 @@
             clearError();
 
             try {
-                const searchUrl = `https://animesugetv.to/filter?keyword=${encodeURIComponent(searchTerm)}`;
+                const searchUrl = `https://gogotaku.info/search.html?keyword=${encodeURIComponent(searchTerm)}`;
                 const response = await fetch(searchUrl);
                 const html = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                const results = doc.querySelectorAll('.film-poster');
+                const results = doc.querySelectorAll('.anime-card');
                 
                 displaySearchResults(Array.from(results).map(result => ({
-                    title: result.querySelector('img').alt,
+                    title: result.querySelector('.anime-title').textContent,
                     slug: result.querySelector('a').href.split('/').pop(),
-                    image: result.querySelector('img').src
+                    image: result.querySelector('img').src,
+                    year: result.querySelector('.anime-year').textContent
                 })));
             } catch (err) {
                 showError('An error occurred while searching. Please try again.');
@@ -296,8 +271,11 @@
                 const resultDiv = document.createElement('div');
                 resultDiv.className = 'search-result';
                 resultDiv.innerHTML = `
-                    <img src="${anime.image}" alt="${anime.title}" style="width: 50px; height: 70px; margin-right: 10px;">
-                    <span>${anime.title}</span>
+                    <img src="${anime.image}" alt="${anime.title}" loading="lazy">
+                    <div>
+                        <div>${anime.title}</div>
+                        <div style="font-size: 0.8em; color: #888;">${anime.year}</div>
+                    </div>
                 `;
                 resultDiv.onclick = () => loadAnime(anime.slug);
                 searchResults.appendChild(resultDiv);
@@ -311,13 +289,15 @@
             clearError();
 
             try {
-                const animeUrl = `https://animesugetv.to/watch/${slug}`;
+                const animeUrl = `https://gogotaku.info/watch/${slug}`;
                 const response = await fetch(animeUrl);
                 const html = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                totalEpisodes = doc.querySelectorAll('.ep-item').length;
+                const episodeList = doc.querySelectorAll('.episode-list li');
+                totalEpisodes = episodeList.length || 12;
+                
                 updateEpisodeButtons();
                 loadEpisode(currentEpisode);
             } catch (err) {
@@ -331,7 +311,7 @@
             if (!currentAnimeSlug) return;
             
             currentEpisode = episode;
-            const watchUrl = `https://animesugetv.to/watch/${currentAnimeSlug}/ep-${episode}`;
+            const watchUrl = `https://gogotaku.info/watch/${currentAnimeSlug}/episode-${episode}`;
             document.getElementById('videoPlayer').src = watchUrl;
             updateEpisodeButtons();
             updateAnimeDetails();
@@ -364,6 +344,7 @@
                 <h2>Now Playing</h2>
                 <p><strong>Anime:</strong> ${currentAnimeSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
                 <p><strong>Episode:</strong> ${currentEpisode} / ${totalEpisodes}</p>
+                <p><strong>Quality:</strong> HD</p>
             `;
         };
 

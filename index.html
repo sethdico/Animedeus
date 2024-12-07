@@ -106,6 +106,12 @@
             text-align: center;
             margin-top: 20px;
         }
+        .episode-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -114,6 +120,11 @@
         
         <div class="video-container">
             <iframe id="videoPlayer" allowfullscreen></iframe>
+        </div>
+
+        <div class="episode-navigation">
+            <button id="prevEpisode" disabled>Previous Episode</button>
+            <button id="nextEpisode" disabled>Next Episode</button>
         </div>
 
         <div class="search-container">
@@ -138,6 +149,12 @@
         const animeDetails = document.getElementById('animeDetails');
         const errorDiv = document.getElementById('error');
         const loadingDiv = document.getElementById('loading');
+        const prevEpisodeButton = document.getElementById('prevEpisode');
+        const nextEpisodeButton = document.getElementById('nextEpisode');
+
+        let currentAnime = null;
+        let currentEpisode = 1;
+        let totalEpisodes = 0;
 
         async function searchAnime(query) {
             try {
@@ -145,10 +162,10 @@
                 const data = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data, 'text/html');
-                return Array.from(doc.querySelectorAll('.anime-item')).map(item => ({
-                    title: item.querySelector('.title')?.textContent || '',
-                    slug: item.querySelector('a')?.getAttribute('href')?.split('/').pop() || '',
-                    image: item.querySelector('img')?.getAttribute('src') || '',
+                return Array.from(doc.querySelectorAll('.film-poster')).map(item => ({
+                    title: item.querySelector('img').alt,
+                    slug: item.querySelector('a').href.split('/').pop(),
+                    image: item.querySelector('img').src,
                 }));
             } catch (error) {
                 console.error('Search error:', error);
@@ -211,18 +228,43 @@
         }
 
         async function handleAnimeSelect(anime) {
-            videoPlayer.src = `${GOGOTAKU_BASE_URL}/watch/${anime.slug}`;
+            currentAnime = anime;
+            currentEpisode = 1;
             showLoading(true);
             clearError();
 
             try {
+                const animePageResponse = await fetch(`${GOGOTAKU_BASE_URL}/watch/${anime.slug}`);
+                const animePageHtml = await animePageResponse.text();
+                const parser = new DOMParser();
+                const animePageDoc = parser.parseFromString(animePageHtml, 'text/html');
+                
+                const episodeList = animePageDoc.querySelectorAll('.ep-item');
+                totalEpisodes = episodeList.length;
+
+                loadEpisode(currentEpisode);
+                updateEpisodeButtons();
+
                 const details = await getAnimeDetails(anime.title);
                 displayAnimeDetails(details);
             } catch (err) {
-                showError('Failed to load anime details');
+                showError('Failed to load anime');
             } finally {
                 showLoading(false);
             }
+        }
+
+        function loadEpisode(episodeNumber) {
+            if (!currentAnime) return;
+            currentEpisode = episodeNumber;
+            const episodeUrl = `${GOGOTAKU_BASE_URL}/watch/${currentAnime.slug}/ep-${episodeNumber}`;
+            videoPlayer.src = episodeUrl;
+            updateEpisodeButtons();
+        }
+
+        function updateEpisodeButtons() {
+            prevEpisodeButton.disabled = currentEpisode <= 1;
+            nextEpisodeButton.disabled = currentEpisode >= totalEpisodes;
         }
 
         function displayAnimeDetails(details) {
@@ -249,6 +291,18 @@
         searchButton.addEventListener('click', handleSearch);
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleSearch();
+        });
+
+        prevEpisodeButton.addEventListener('click', () => {
+            if (currentEpisode > 1) {
+                loadEpisode(currentEpisode - 1);
+            }
+        });
+
+        nextEpisodeButton.addEventListener('click', () => {
+            if (currentEpisode < totalEpisodes) {
+                loadEpisode(currentEpisode + 1);
+            }
         });
     </script>
 </body>

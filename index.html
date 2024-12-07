@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Animedeus</title>
     <style>
-        :root {
+                :root {
             --primary-color: #FF9800;
             --secondary-color: #2C2C2C;
             --background-color: #121212;
@@ -114,7 +114,7 @@
         }
     </style>
 </head>
-<body>
+<body class="dark-mode">
     <div class="container">
         <h1>Animedeus</h1>
         
@@ -122,187 +122,238 @@
             <iframe id="videoPlayer" allowfullscreen></iframe>
         </div>
 
-        <div class="episode-navigation">
-            <button id="prevEpisode" disabled>Previous Episode</button>
-            <button id="nextEpisode" disabled>Next Episode</button>
+        <div class="controls">
+            <button id="prevEpisode">Previous</button>
+            <button id="fallbackButton">Fallback: Off</button>
+            <button id="nextEpisode">Next</button>
         </div>
 
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search anime..." />
-            <button id="searchButton">Search</button>
-        </div>
+        <div id="episodeNav" class="episode-nav"></div>
+        <div id="episodeButtons" class="episode-buttons"></div>
 
+        <input type="text" id="searchInput" placeholder="Search anime" autofocus>
+        <button onclick="searchAnime()">Search</button>
         <div id="searchResults" class="search-results"></div>
+
         <div id="animeDetails" class="anime-details"></div>
         <div id="error" class="error"></div>
         <div id="loading" class="loading"></div>
+
+        <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
     </div>
 
     <script>
+        // Base URLs
         const GOGOTAKU_BASE_URL = 'https://gogotaku.info';
         const JIKAN_BASE_URL = 'https://api.jikan.moe/v4';
-
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const searchResults = document.getElementById('searchResults');
-        const videoPlayer = document.getElementById('videoPlayer');
-        const animeDetails = document.getElementById('animeDetails');
-        const errorDiv = document.getElementById('error');
-        const loadingDiv = document.getElementById('loading');
-        const prevEpisodeButton = document.getElementById('prevEpisode');
-        const nextEpisodeButton = document.getElementById('nextEpisode');
-
-        let currentAnime = null;
+        
         let currentEpisode = 1;
         let totalEpisodes = 0;
+        let currentAnimeSlug = '';
+        let isFallbackMode = false;
 
-        async function searchAnime(query) {
-            try {
-                const response = await fetch(`${GOGOTAKU_BASE_URL}/search.html?keyword=${encodeURIComponent(query)}`);
-                const data = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data, 'text/html');
-                return Array.from(doc.querySelectorAll('.film-poster')).map(item => ({
-                    title: item.querySelector('img').alt,
-                    slug: item.querySelector('a').href.split('/').pop(),
-                    image: item.querySelector('img').src,
-                }));
-            } catch (error) {
-                console.error('Search error:', error);
-                return [];
-            }
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('searchInput').focus();
+        });
 
-        async function getAnimeDetails(title) {
-            try {
-                const response = await fetch(`${JIKAN_BASE_URL}/anime?q=${encodeURIComponent(title)}&limit=1`);
-                const data = await response.json();
-                return data.data && data.data.length > 0 ? data.data[0] : null;
-            } catch (error) {
-                console.error('Jikan API error:', error);
-                return null;
-            }
-        }
-
-        function showLoading(isLoading) {
-            loadingDiv.textContent = isLoading ? 'Loading...' : '';
-        }
-
-        function showError(message) {
-            errorDiv.textContent = message;
-        }
-
-        function clearError() {
-            errorDiv.textContent = '';
-        }
-
-        async function handleSearch() {
-            const query = searchInput.value.trim();
-            if (!query) return;
+        const searchAnime = async () => {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) return;
 
             showLoading(true);
             clearError();
 
             try {
-                const results = await searchAnime(query);
-                displaySearchResults(results);
+                // First try Jikan API for metadata
+                const jikanResponse = await fetch(`${JIKAN_BASE_URL}/anime?q=${encodeURIComponent(searchTerm)}&limit=5`);
+                const jikanData = await jikanResponse.json();
+
+                // Then search on gogotaku
+                const searchUrl = `${GOGOTAKU_BASE_URL}/search?keyword=${encodeURIComponent(searchTerm)}`;
+                const response = await fetch(searchUrl);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update selectors based on gogotaku's HTML structure
+                const results = doc.querySelectorAll('.video-block');
+                
+                const combinedResults = Array.from(results).map(result => {
+                    const title = result.querySelector('.name').textContent;
+                    const slug = result.querySelector('a').href.split('/').pop();
+                    const image = result.querySelector('img').src;
+                    
+                    // Find matching Jikan data
+                    const jikanMatch = jikanData.data.find(anime => 
+                        anime.title.toLowerCase() === title.toLowerCase()
+                    );
+
+                    return {
+                        title,
+                        slug,
+                        image,
+                        synopsis: jikanMatch?.synopsis || '',
+                        rating: jikanMatch?.score || 'N/A',
+                        year: jikanMatch?.year || 'N/A'
+                    };
+                });
+
+                displaySearchResults(combinedResults);
             } catch (err) {
-                showError('Failed to search anime');
+                showError('An error occurred while searching. Please try again.');
+                console.error(err);
             } finally {
                 showLoading(false);
             }
-        }
+        };
 
-        function displaySearchResults(results) {
+        const displaySearchResults = (results) => {
+            const searchResults = document.getElementById('searchResults');
             searchResults.innerHTML = '';
-            results.forEach(result => {
-                const resultElement = document.createElement('div');
-                resultElement.className = 'search-result';
-                resultElement.innerHTML = `
-                    <img src="${result.image}" alt="${result.title}" loading="lazy">
-                    <p>${result.title}</p>
-                `;
-                resultElement.addEventListener('click', () => handleAnimeSelect(result));
-                searchResults.appendChild(resultElement);
-            });
-        }
 
-        async function handleAnimeSelect(anime) {
-            currentAnime = anime;
+            results.forEach(anime => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'search-result';
+                resultDiv.innerHTML = `
+                    <img src="${anime.image}" alt="${anime.title}" style="width: 50px; height: 70px; margin-right: 10px;">
+                    <div>
+                        <div style="font-weight: bold;">${anime.title}</div>
+                        <div style="font-size: 0.8em;">Rating: ${anime.rating} | Year: ${anime.year}</div>
+                        <div style="font-size: 0.8em; color: var(--text-color);">${anime.synopsis?.substring(0, 100)}...</div>
+                    </div>
+                `;
+                resultDiv.onclick = () => loadAnime(anime.slug);
+                searchResults.appendChild(resultDiv);
+            });
+        };
+
+        const loadAnime = async (slug) => {
+            currentAnimeSlug = slug;
             currentEpisode = 1;
             showLoading(true);
             clearError();
 
             try {
-                const animePageResponse = await fetch(`${GOGOTAKU_BASE_URL}/watch/${anime.slug}`);
-                const animePageHtml = await animePageResponse.text();
+                const animeUrl = `${GOGOTAKU_BASE_URL}/anime/${slug}`;
+                const response = await fetch(animeUrl);
+                const html = await response.text();
                 const parser = new DOMParser();
-                const animePageDoc = parser.parseFromString(animePageHtml, 'text/html');
+                const doc = parser.parseFromString(html, 'text/html');
                 
-                const episodeList = animePageDoc.querySelectorAll('.ep-item');
-                totalEpisodes = episodeList.length;
-
-                loadEpisode(currentEpisode);
+                // Update selector based on gogotaku's HTML structure
+                totalEpisodes = doc.querySelectorAll('.ep-item').length;
                 updateEpisodeButtons();
-
-                const details = await getAnimeDetails(anime.title);
-                displayAnimeDetails(details);
+                loadEpisode(currentEpisode);
             } catch (err) {
-                showError('Failed to load anime');
+                showError('Failed to load anime. Please try again.');
+                console.error(err);
             } finally {
                 showLoading(false);
             }
-        }
+        };
 
-        function loadEpisode(episodeNumber) {
-            if (!currentAnime) return;
-            currentEpisode = episodeNumber;
-            const episodeUrl = `${GOGOTAKU_BASE_URL}/watch/${currentAnime.slug}/ep-${episodeNumber}`;
-            videoPlayer.src = episodeUrl;
+        const loadEpisode = (episode) => {
+            if (!currentAnimeSlug) return;
+            
+            currentEpisode = episode;
+            const watchUrl = `${GOGOTAKU_BASE_URL}/watch/${currentAnimeSlug}/episode-${episode}`;
+            
+            // Try to load the video player
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.src = watchUrl;
+
+            // Add error handling for embedding restrictions
+            videoPlayer.onerror = () => {
+                if (!isFallbackMode) {
+                    showError('Video embedding restricted. Try enabling fallback mode or visit the site directly.');
+                } else {
+                    // Fallback mode: open in new tab
+                    window.open(watchUrl, '_blank');
+                }
+            };
+
             updateEpisodeButtons();
-        }
+            updateAnimeDetails();
+        };
 
-        function updateEpisodeButtons() {
-            prevEpisodeButton.disabled = currentEpisode <= 1;
-            nextEpisodeButton.disabled = currentEpisode >= totalEpisodes;
-        }
-
-        function displayAnimeDetails(details) {
-            if (!details) {
-                animeDetails.innerHTML = '<p>No details available</p>';
-                return;
+        const changeEpisode = (delta) => {
+            const newEpisode = currentEpisode + delta;
+            if (newEpisode >= 1 && newEpisode <= totalEpisodes) {
+                loadEpisode(newEpisode);
             }
+        };
 
-            animeDetails.innerHTML = `
-                <h2>${details.title}</h2>
-                <p>${details.synopsis}</p>
-                <div>
-                    <strong>Score:</strong> ${details.score}
-                    <strong>Episodes:</strong> ${details.episodes}
-                    <strong>Status:</strong> ${details.status}
-                    <strong>Aired:</strong> ${details.aired.string}
-                </div>
-                <div>
-                    <strong>Genres:</strong> ${details.genres.map(genre => genre.name).join(', ')}
-                </div>
-            `;
-        }
-
-        searchButton.addEventListener('click', handleSearch);
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSearch();
-        });
-
-        prevEpisodeButton.addEventListener('click', () => {
-            if (currentEpisode > 1) {
-                loadEpisode(currentEpisode - 1);
+        const updateEpisodeButtons = () => {
+            const container = document.getElementById('episodeButtons');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= totalEpisodes; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.add('episode-button');
+                if (i === currentEpisode) button.classList.add('current-episode');
+                button.onclick = () => loadEpisode(i);
+                container.appendChild(button);
             }
-        });
+        };
 
-        nextEpisodeButton.addEventListener('click', () => {
-            if (currentEpisode < totalEpisodes) {
-                loadEpisode(currentEpisode + 1);
+        const updateAnimeDetails = async () => {
+            const details = document.getElementById('animeDetails');
+            
+            try {
+                // Try to fetch additional details from Jikan API
+                const response = await fetch(`${JIKAN_BASE_URL}/anime?q=${encodeURIComponent(currentAnimeSlug)}&limit=1`);
+                const data = await response.json();
+                const animeInfo = data.data[0] || {};
+
+                details.innerHTML = `
+                    <h2>Now Playing</h2>
+                    <p><strong>Anime:</strong> ${currentAnimeSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                    <p><strong>Episode:</strong> ${currentEpisode} / ${totalEpisodes}</p>
+                    ${animeInfo.synopsis ? `<p><strong>Synopsis:</strong> ${animeInfo.synopsis}</p>` : ''}
+                    ${animeInfo.score ? `<p><strong>Rating:</strong> ${animeInfo.score}</p>` : ''}
+                    ${animeInfo.year ? `<p><strong>Year:</strong> ${animeInfo.year}</p>` : ''}
+                `;
+            } catch (err) {
+                details.innerHTML = `
+                    <h2>Now Playing</h2>
+                    <p><strong>Anime:</strong> ${currentAnimeSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                    <p><strong>Episode:</strong> ${currentEpisode} / ${totalEpisodes}</p>
+                `;
             }
+        };
+
+        const toggleFallback = () => {
+            isFallbackMode = !isFallbackMode;
+            const fallbackButton = document.getElementById('fallbackButton');
+            fallbackButton.textContent = `Fallback: ${isFallbackMode ? 'On' : 'Off'}`;
+            fallbackButton.classList.toggle('fallback-on', isFallbackMode);
+            if (currentAnimeSlug) loadEpisode(currentEpisode);
+        };
+
+        const toggleTheme = () => {
+            document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('light-mode');
+        };
+
+        const showError = (message) => {
+            document.getElementById('error').textContent = message;
+        };
+
+        const clearError = () => {
+            document.getElementById('error').textContent = '';
+        };
+
+        const showLoading = (isLoading) => {
+            document.getElementById('loading').textContent = isLoading ? 'Loading...' : '';
+        };
+
+        // Event Listeners
+        document.getElementById('prevEpisode').addEventListener('click', () => changeEpisode(-1));
+        document.getElementById('nextEpisode').addEventListener('click', () => changeEpisode(1));
+        document.getElementById('fallbackButton').addEventListener('click', toggleFallback);
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchAnime();
         });
     </script>
 </body>
